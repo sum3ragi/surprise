@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A little surprise ♡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbe9e0;
+    --panel: #fff7f2;
+    --ink: #4a3232;
+    --soft: #7d5d5a;
+    --pink: #e8b4bc;
+    --pink-deep: #d98d9c;
+    --rose: #c9566c;
+    --brown: #7a4a3a;
+    --teal: #8fcfc9;
+    --yellow: #f5d67a;
+    --purple: #b9acdf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle, #f6d3d3 1.5px, transparent 1.6px) 0 0 / 22px 22px,
+      var(--bg);
+    font-family: "Pixelify Sans", "Courier New", monospace;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 14px;
+    overflow-x: hidden;
+  }
+  canvas { image-rendering: pixelated; display: block; }
+  canvas#fx { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+  /* ---------- shared pixel panel ---------- */
+  .panel {
+    position: relative;
+    z-index: 2;
+    width: min(94vw, 520px);
+    background: var(--panel);
+    border: 4px solid var(--brown);
+    box-shadow: 6px 6px 0 var(--pink-deep), 6px 6px 0 4px var(--brown);
+    padding: 44px 22px 26px;
+    text-align: center;
+  }
+  .panel::before, .panel::after {   /* tiny pixel hearts in the corners */
+    content: "♥";
+    position: absolute;
+    top: 8px;
+    color: var(--pink-deep);
+    font-size: 16px;
+  }
+  .panel::before { left: 12px; }
+  .panel::after  { right: 12px; }
+
+  /* ---------- bunting ---------- */
+  .bunting {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 30px;
+    border-top: 3px solid var(--brown);
+  }
+  .bunting i {
+    width: 22px; height: 24px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    animation: sway 1.6s steps(2) infinite;
+    transform-origin: top center;
+  }
+  .bunting i:nth-child(4n+1) { background: var(--pink); }
+  .bunting i:nth-child(4n+2) { background: var(--teal); }
+  .bunting i:nth-child(4n+3) { background: var(--yellow); }
+  .bunting i:nth-child(4n+4) { background: var(--purple); }
+  .bunting i:nth-child(even) { animation-delay: .8s; }
+
+  /* ---------- locked screen ---------- */
+  #gift { width: 190px; height: auto; margin: 6px auto 14px; cursor: pointer; animation: wiggle 1.8s steps(1) infinite; }
+  #gift.shake { animation: shake .4s steps(4); }
+  h2 { font-size: clamp(22px, 5.4vw, 28px); font-weight: 600; margin-bottom: 6px; }
+  .lead { color: var(--soft); font-size: 16px; margin-bottom: 18px; }
+  .lead b { color: var(--rose); }
+  .countdown { display: flex; justify-content: center; gap: 10px; margin-bottom: 14px; }
+  .countdown div {
+    width: 72px;
+    padding: 8px 0 6px;
+    background: #fde3e6;
+    border: 3px solid var(--brown);
+    box-shadow: 3px 3px 0 var(--brown);
+  }
+  .countdown span { display: block; font-size: 28px; font-weight: 600; color: var(--rose); }
+  .countdown small { font-size: 12px; color: var(--soft); letter-spacing: 1px; }
+  .tiny { font-size: 13px; color: var(--soft); min-height: 1.3em; }
+
+  /* ---------- birthday card ---------- */
+  #card[hidden], #locked[hidden] { display: none; }
+  #card { animation: pop .6s steps(6); }
+  h1 {
+    font-size: clamp(26px, 6.4vw, 38px);
+    font-weight: 600;
+    margin-bottom: 6px;
+    animation: bob 2.4s steps(4) infinite;
+  }
+  h1 .heart { color: var(--rose); font-size: .8em; }
+  h1 span[contenteditable] { outline: none; border-bottom: 2px dashed transparent; cursor: text; }
+  h1 span[contenteditable]:hover, h1 span[contenteditable]:focus { border-bottom-color: var(--pink); }
+  .sub { font-size: clamp(14px, 3.4vw, 17px); color: var(--soft); margin-bottom: 14px; }
+  #cake {
+    width: 100%; height: auto; cursor: pointer;
+    transform-origin: 50% 100%;
+    animation: squish 1.2s steps(1) infinite;
+  }
+  .hint { margin-top: 10px; font-size: 15px; color: var(--soft); min-height: 1.5em; }
+  .wish { font-size: clamp(20px, 5vw, 26px); color: var(--rose); font-weight: 600; display: inline-block; animation: pop .5s steps(5); }
+  button, .btn {
+    margin-top: 12px;
+    font-family: inherit; font-size: 15px;
+    padding: 8px 18px;
+    background: var(--pink); color: var(--ink);
+    border: 3px solid var(--brown);
+    box-shadow: 4px 4px 0 var(--brown);
+    cursor: pointer;
+  }
+  button:active { transform: translate(4px, 4px); box-shadow: none; }
+  #relight { display: none; background: #fde3e6; font-size: 13px; padding: 6px 12px; }
+
+  /* ---------- envelope ---------- */
+  #envelopeWrap { display: none; margin-top: 18px; animation: pop .5s steps(5); }
+  #envelope { width: 150px; height: auto; margin: 0 auto; cursor: pointer; animation: hop 1s steps(1) infinite; }
+  .mail-hint { font-size: 16px; color: var(--rose); margin-top: 6px; }
+
+  /* ---------- letter modal ---------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 10;
+    background: rgba(74, 50, 50, .45);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal.open { display: flex; }
+  .letter {
+    position: relative;
+    width: min(94vw, 460px);
+    max-height: 88vh;
+    overflow-y: auto;
+    background:
+      repeating-linear-gradient(#fffaf5 0 29px, #f3d9dc 29px 31px);
+    border: 4px solid var(--brown);
+    box-shadow: 6px 6px 0 var(--pink-deep), 6px 6px 0 4px var(--brown);
+    padding: 30px 26px 24px;
+    text-align: left;
+    line-height: 31px;
+    font-size: 17px;
+    animation: slideUp .55s steps(6);
+  }
+  .letter .close {
+    position: absolute; top: 8px; right: 10px;
+    margin: 0; padding: 0 8px; font-size: 16px; line-height: 26px;
+    box-shadow: 2px 2px 0 var(--brown);
+  }
+  .letter .stamp { position: absolute; top: 14px; right: 52px; font-size: 26px; transform: rotate(8deg); }
+  .letter .to { font-weight: 600; font-size: 20px; color: var(--rose); }
+  .letter .line { opacity: 0; animation: fadeIn .5s steps(4) forwards; text-indent: 1.6em; }
+  .letter .to, .letter .from { text-indent: 0; }
+  .letter .from { text-align: right; font-weight: 600; margin-top: 6px; }
+
+  @keyframes hop     { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px) rotate(-3deg); } }
+  @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes fadeIn  { to { opacity: 1; } }
+
+  @keyframes bob    { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes pop    { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes sway   { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+  @keyframes squish { 0%,100% { transform: scale(1, 1); } 50% { transform: scale(1.015, .985); } }
+  @keyframes wiggle { 0%,70%,100% { transform: rotate(0); } 75% { transform: rotate(-5deg); } 85% { transform: rotate(5deg); } 95% { transform: rotate(-3deg); } }
+  @keyframes shake  { 0% { transform: translateX(-6px); } 25% { transform: translateX(6px); } 50% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+</style>
+</head>
+<body>
+
+  <!-- Shown before Nov 22 (PH time) -->
+  <section class="panel" id="locked">
+    <div class="bunting"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <canvas id="gift"></canvas>
+    <h2>Psst... a surprise is waiting!</h2>
+    <p class="lead">It opens on <b>November 22</b> ♡</p>
+    <div class="countdown">
+      <div><span id="cd-d">0</span><small>DAYS</small></div>
+      <div><span id="cd-h">00</span><small>HRS</small></div>
+      <div><span id="cd-m">00</span><small>MIN</small></div>
+      <div><span id="cd-s">00</span><small>SEC</small></div>
+    </div>
+    <p class="tiny" id="peek">no peeking~ ( ˘ ³˘)♥</p>
+  </section>
+
+  <!-- The birthday card -->
+  <section class="panel" id="card" hidden>
+    <div class="bunting"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <h1><span class="heart">♥</span> Happy Birthday, <span id="name" contenteditable="true" spellcheck="false">Heia</span>! <span class="heart">♥</span></h1>
+    <p class="sub">Yayy! Wishing you the happiest birthday ever!!</p>
+    <canvas id="cake"></canvas>
+    <p class="hint" id="hint">Tap the cake to blow out the candles ♡</p>
+    <div id="envelopeWrap">
+      <canvas id="envelope"></canvas>
+      <p class="mail-hint">You've got mail! Tap to open ♡</p>
+    </div>
+    <button id="relight">Relight candles</button>
+  </section>
+
+  <!-- Letter -->
+  <div class="modal" id="letterModal">
+    <div class="letter" role="dialog" aria-label="Birthday letter">
+      <button class="close" id="closeLetter" aria-label="Close">✕</button>
+      <span class="stamp">💌</span>
+      <div id="letterBody"></div>
+    </div>
+  </div>
+
+  <canvas id="fx"></canvas>
+
+<script>
+/* =========================================================
+   Unlock time: Nov 22, 2026, 12:00 AM Philippine time (UTC+8)
+   = Nov 21, 16:00 UTC. Works no matter where the viewer is.
+   ========================================================= */
+const UNLOCK_AT = Date.UTC(2026, 10, 21, 16, 0, 0);   // months are 0-based: 10 = November
+
+/* =========================================================
+   ✉️  YOUR LETTER — edit this part!
+   Each item in "body" becomes its own paragraph.
+   "{name}" is replaced with the birthday person's name.
+   ========================================================= */
+const LETTER = {
+  greeting: "Dear Heia,",
+  body: [
+    "Happy birthday!! I hope today is as sweet as this little cake (and way more delicious).",
+    "Sana makabisado mo na rin yung 'Don't You Worry 'Bout A Thing' na trend sa TikTok, kasi ikaw naaalala ko kapag napapadaan 'yan sa fyp ko, anyways, gusto ko lang na mag-enjoy ka ng birthday mo, Heia. Sana masaya ka sa birthday mo, and sana masaya ka rin sa mga susunod na birthdays mo.",
+    "Sana 'wag ka palagi kumain ng french fries or kahit anong junk foods, kasi baka magkasakit ka na naman. HAY NAKO KA! Kaya sana mas magfocus ka sa healthy foods, like fruits and vegetables. Kasi gusto ko healthy ka and palagi kang masaya, Heia.",
+    "I know you love to eat, so I hope you get to enjoy all your favorite foods today. But remember, moderation is key! Don't forget to take care of yourself and stay healthy.",
+    "I hope you have a wonderful day filled with love, laughter, and all the things that make you happy. You deserve the best birthday ever!",
+    "I hope this birthday is just the beginning of a year filled with happy memories, wonderful moments, and shining dreams. May your heart be filled with joy and your life with love.",
+    "Thank you for being you. Here's to another year full of good food, big laughs, and everything you've been wishing for.",
+  ],
+  signoff: "With love,",
+  from: "Lowi",
+};
+
+const params = new URLSearchParams(location.search);
+if (params.get("name")) document.getElementById("name").textContent = params.get("name");
+const PREVIEW = params.has("preview") || location.hash.includes("preview");               // add #preview to the URL to test the card early
+
+/* ---------- colors ---------- */
+const C = {
+  brown: "#7a4a3a", pink: "#e8b4bc", pinkDot: "#d98d9c", pinkLight: "#f6cfd5",
+  cream: "#f8efcf", red: "#d9504a", redDark: "#b83d3a", seed: "#f5d67a",
+  cap: "#fff8ee", green: "#9cc58a", teal: "#8fcfc9", purple: "#a99bd1", yellow: "#e8cf7a",
+  flame1: "#f6b24a", flame2: "#f07a3a", flameCore: "#fff1b8",
+  heart: "#e98fa0", sparkle: "#f2b8c2", smoke: "#c9b8b4", blush: "#f29aa8",
+  white: "#ffffff", ribbon: "#f5d67a", ribbonDark: "#e0b84f",
+};
+
+/* ---------- tiny pixel-grid toolkit ---------- */
+function PixelGrid(w, h) {
+  const g = Array.from({ length: h }, () => Array(w).fill(null));
+  const set = (x, y, c) => { if (x >= 0 && x < w && y >= 0 && y < h) g[y][x] = c; };
+  const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c); };
+  const ellipse = (cx, cy, rx, ry, c) => {
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
+      for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+        const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+        if (dx * dx + dy * dy <= 1) set(x, y, c);
+      }
+  };
+  const outline = c => {   // brown border around the whole silhouette
+    const add = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (g[y][x]) continue;
+      if ([[1,0],[-1,0],[0,1],[0,-1]].some(([dx, dy]) => g[y+dy] && g[y+dy][x+dx] && g[y+dy][x+dx] !== c)) add.push([x, y]);
+    }
+    add.forEach(([x, y]) => set(x, y, c));
+  };
+  return { w, h, g, set, rect, ellipse, outline };
+}
+function drawGrid(ctx, pg, cell) {
+  for (let y = 0; y < pg.h; y++) for (let x = 0; x < pg.w; x++) {
+    const c = pg.g[y][x];
+    if (!c) continue;
+    ctx.fillStyle = c;
+    ctx.fillRect(x * cell, y * cell, cell, cell);
+    ctx.strokeStyle = "rgba(90,50,40,0.07)";
+    ctx.strokeRect(x * cell + 0.5, y * cell + 0.5, cell - 1, cell - 1);
+  }
+}
+const HEART = [[1,0],[3,0],[0,1],[1,1],[2,1],[3,1],[4,1],[1,2],[2,2],[3,2],[2,3]];
+function pixelHeart(ctx, x, y, px, color) {
+  ctx.fillStyle = color;
+  HEART.forEach(([dx, dy]) => ctx.fillRect(x + dx * px, y + dy * px, px, px));
+}
+
+/* =========================================================
+   GIFT BOX (locked screen)
+   ========================================================= */
+const giftCv = document.getElementById("gift");
+const gctx = giftCv.getContext("2d");
+const GC = 10;
+const gift = PixelGrid(26, 25);
+giftCv.width = gift.w * GC; giftCv.height = gift.h * GC;
+
+gift.ellipse(9.2, 5.5, 4, 3, C.ribbon);          // bow loops
+gift.ellipse(16.8, 5.5, 4, 3, C.ribbon);
+gift.ellipse(9.4, 5.6, 1.6, 1.1, C.ribbonDark);
+gift.ellipse(16.6, 5.6, 1.6, 1.1, C.ribbonDark);
+gift.rect(2, 9, 23, 12, C.pink);                 // lid
+gift.rect(3, 13, 22, 13, C.brown);
+gift.rect(4, 14, 21, 23, C.pinkLight);           // box
+gift.rect(12, 9, 13, 23, C.ribbon);              // ribbon
+gift.rect(11, 5, 14, 8, C.ribbonDark);           // knot
+gift.rect(12, 13, 13, 13, C.brown);
+// cute face
+gift.rect(7, 17, 8, 18, C.brown);  gift.set(7, 17, C.white);
+gift.rect(17, 17, 18, 18, C.brown); gift.set(17, 17, C.white);
+gift.rect(5, 20, 6, 20, C.blush);  gift.rect(19, 20, 20, 20, C.blush);
+[[11,20],[12,21],[13,21],[14,20]].forEach(([x, y]) => gift.set(x, y, C.brown));
+gift.outline(C.brown);
+
+let giftBlink = false;
+function renderGift() {
+  gctx.clearRect(0, 0, giftCv.width, giftCv.height);
+  drawGrid(gctx, gift, GC);
+  if (giftBlink) {   // close the eyes for a blink
+    gctx.fillStyle = C.pinkLight;
+    [[7,17],[8,17],[17,17],[18,17]].forEach(([x, y]) => gctx.fillRect(x * GC, y * GC, GC, GC));
+  }
+}
+giftCv.addEventListener("click", () => {
+  giftCv.classList.remove("shake"); void giftCv.offsetWidth; giftCv.classList.add("shake");
+  const lines = ["no peeking~ ( ˘ ³˘)♥", "hey! not yet hehe", "patience, birthday star ✦", "it's worth the wait, promise!"];
+  document.getElementById("peek").textContent = lines[Math.floor(Math.random() * lines.length)];
+});
+
+/* =========================================================
+   CAKE (birthday card)
+   ========================================================= */
+const cv = document.getElementById("cake");
+const ctx = cv.getContext("2d");
+const CELL = 10;
+const cake = PixelGrid(60, 58);
+cv.width = cake.w * CELL; cv.height = cake.h * CELL;
+const { set, rect, ellipse } = cake;
+const tri = x => [0, 1, 2, 1][((x % 4) + 4) % 4];
+const rand = (() => { let s = 7; return () => (s = (s * 9301 + 49297) % 233280) / 233280; })();
+
+/* bottom tier */
+for (let x = 6; x <= 53; x++) {
+  const b = 41 + tri(x);
+  for (let y = 36; y <= b; y++) set(x, y, C.pink);
+  set(x, b + 1, C.brown);
+}
+for (let x = 8; x <= 51; x++) {
+  const b = 41 + tri(x);
+  for (let y = b + 2; y <= 49; y++) set(x, y, C.cream);
+}
+/* plate with strawberry slices */
+rect(7, 50, 52, 50, C.brown);
+rect(7, 51, 52, 54, C.cream);
+for (const cx of [13, 21.5, 30, 38.5, 47]) {
+  for (let y = 51; y <= 54; y++) for (let x = Math.floor(cx - 4); x <= Math.ceil(cx + 4); x++) {
+    const dx = (x + 0.5 - cx) / 3.4, dy = (y + 0.5 - 55) / 3.4, d = dx * dx + dy * dy;
+    if (d <= 1) set(x, y, d < 0.3 ? C.cream : C.red);
+  }
+}
+/* top tier */
+for (let x = 10; x <= 49; x++) {
+  const top = (x === 10 || x === 49) ? 18 : 17;
+  const b = 24 + tri(x);
+  for (let y = top; y <= b; y++) set(x, y, C.pink);
+  set(x, b + 1, C.brown);
+}
+for (let x = 12; x <= 47; x++) {
+  const b = 24 + tri(x);
+  for (let y = b + 2; y <= 35; y++) set(x, y, C.cream);
+}
+for (let i = 0; i < 70; i++) {
+  const x = 6 + Math.floor(rand() * 48), y = 17 + Math.floor(rand() * 27);
+  if (cake.g[y][x] === C.pink && (x + y) % 2 === 0) set(x, y, C.pinkDot);
+}
+/* strawberries */
+for (const cx of [9, 18, 26.5, 34.5, 42.5, 51]) {
+  ellipse(cx, 34, 5, 5, C.brown);
+  ellipse(cx, 34, 4, 4, C.red);
+  ellipse(cx + 1.2, 35.2, 2.2, 2, C.redDark);
+  ellipse(cx - 0.6, 33.4, 2.8, 2.6, C.red);
+  for (const [dx, dy] of [[-1, -2], [1, -1], [-2, 0], [0, 1], [2, 1]]) set(Math.floor(cx + dx), 34 + dy, C.seed);
+  set(Math.floor(cx - 2), 32, C.white);   // shine
+}
+/* kawaii face on the bottom tier */
+const EYES = [[22,46],[23,46],[22,47],[23,47],[36,46],[37,46],[36,47],[37,47]];
+EYES.forEach(([x, y]) => set(x, y, C.brown));
+set(22, 46, C.white); set(36, 46, C.white);
+rect(17, 48, 19, 48, C.blush); rect(40, 48, 42, 48, C.blush);
+[[28,48],[29,49],[30,48],[31,49],[32,48]].forEach(([x, y]) => set(x, y, C.brown));   // "w" mouth
+cake.outline(C.brown);
+
+/* candles */
+const candles = [];
+const candle = (x, bottom, h, color) => {
+  const top = bottom - h;
+  rect(x, top, x + 3, bottom, C.brown);
+  rect(x + 1, top + 1, x + 2, bottom - 1, color);
+  rect(x + 1, top + 1, x + 2, top + 1, C.cap);
+  set(x + 2, top + 3, C.cap);
+  set(x + 1, top - 1, C.brown);
+  candles.push({ x: x + 1, y: top - 2 });
+};
+[[15, C.teal], [21, C.teal], [27, C.teal], [33, C.purple], [39, C.yellow], [45, C.teal]].forEach(([x, c]) => candle(x, 18, 6, c));
+[[12, C.green], [24, C.teal], [30, C.teal], [42, C.teal]].forEach(([x, c]) => candle(x, 22, 5, c));
+
+/* sparkles & hearts around the cake */
+const deco = [
+  { x: 3, y: 12, type: "heart" }, { x: 52, y: 13, type: "heart" }, { x: 54, y: 24, type: "heart" },
+  { x: 1, y: 27, type: "heart" },
+  { x: 9, y: 7, type: "plus" }, { x: 48, y: 6, type: "plus" }, { x: 56, y: 36, type: "plus" },
+  { x: 18, y: 3, type: "dot" }, { x: 41, y: 2, type: "dot" }, { x: 2, y: 36, type: "dot" },
+  { x: 57, y: 10, type: "dot" }, { x: 6, y: 20, type: "dot" },
+].map(s => ({ ...s, phase: Math.random() * Math.PI * 2 }));
+
+let lit = true, smoke = [], t = 0;
+const cell = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x * CELL, y * CELL, CELL, CELL); };
+
+function renderCake() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  drawGrid(ctx, cake, CELL);
+
+  // happy closed eyes "^ ^" after the wish, normal blink otherwise
+  const blink = t % 45 < 2;
+  if (!lit || blink) {
+    EYES.forEach(([x, y]) => cell(x, y, C.cream));
+    if (!lit) {
+      [[21,47],[22,46],[23,46],[24,47],[35,47],[36,46],[37,46],[38,47]].forEach(([x, y]) => cell(x, y, C.brown));
+    } else {
+      [[22,47],[23,47],[36,47],[37,47]].forEach(([x, y]) => cell(x, y, C.brown));
+    }
+  }
+
+  if (lit) {
+    candles.forEach((c, i) => {
+      const f = (Math.floor(t / 2) + i) % 4;
+      cell(c.x, c.y + 1, C.flameCore);
+      cell(c.x, c.y, C.flame1);
+      cell(c.x, c.y - 1, f === 0 ? C.flame2 : C.flame1);
+      if (f === 1) cell(c.x - 1, c.y, C.flame2);
+      if (f === 3) cell(c.x + 1, c.y, C.flame2);
+      if (f !== 2) cell(c.x + (f === 1 ? -1 : f === 3 ? 1 : 0), c.y - 2, C.flame2);
+    });
+  }
+
+  smoke.forEach(p => { ctx.globalAlpha = Math.max(0, p.life / 30); cell(Math.round(p.x), Math.round(p.y), C.smoke); });
+  ctx.globalAlpha = 1;
+
+  deco.forEach(s => {
+    const v = Math.sin(t * 0.18 + s.phase);
+    if (s.type === "heart") {
+      const lift = v > 0 ? 1 : 0;   // little hop
+      pixelHeart(ctx, s.x * CELL, (s.y - lift) * CELL, CELL, C.heart);
+    } else if (v > -0.3) {
+      cell(s.x, s.y, C.sparkle);
+      if (s.type === "plus" && v > 0.2) [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => cell(s.x + dx, s.y + dy, C.sparkle));
+    }
+  });
+}
+
+/* =========================================================
+   Full-screen effects: floating hearts + confetti
+   ========================================================= */
+const fx = document.getElementById("fx");
+const fctx = fx.getContext("2d");
+function resizeFx() { fx.width = innerWidth; fx.height = innerHeight; }
+addEventListener("resize", resizeFx); resizeFx();
+
+const floaters = Array.from({ length: 14 }, () => newFloater(true));
+function newFloater(anywhere) {
+  return {
+    x: Math.random() * innerWidth,
+    y: anywhere ? Math.random() * innerHeight : innerHeight + 20,
+    px: 3 + Math.floor(Math.random() * 3),
+    v: 0.3 + Math.random() * 0.5,
+    c: [C.heart, C.pink, C.purple, C.teal][Math.floor(Math.random() * 4)],
+    a: 0.25 + Math.random() * 0.25,
+  };
+}
+
+let confetti = [];
+function burst(from) {
+  const colors = [C.pink, C.red, C.teal, C.purple, C.yellow, C.green, C.heart];
+  const r = from.getBoundingClientRect();
+  for (let i = 0; i < 170; i++) {
+    confetti.push({
+      x: r.left + r.width / 2 + (Math.random() - 0.5) * 80,
+      y: r.top + r.height * 0.3,
+      vx: (Math.random() - 0.5) * 15,
+      vy: -Math.random() * 14 - 4,
+      s: 6 + Math.floor(Math.random() * 3) * 2,
+      c: colors[Math.floor(Math.random() * colors.length)],
+      heart: Math.random() < 0.25,
+      life: 130 + Math.random() * 60,
+    });
+  }
+}
+
+function stepFx() {
+  fctx.clearRect(0, 0, fx.width, fx.height);
+  floaters.forEach((f, i) => {
+    f.y -= f.v;
+    f.x += Math.sin(f.y / 40) * 0.3;
+    if (f.y < -30) floaters[i] = newFloater(false);
+    fctx.globalAlpha = f.a;
+    pixelHeart(fctx, Math.round(f.x / f.px) * f.px, Math.round(f.y / f.px) * f.px, f.px, f.c);
+  });
+  fctx.globalAlpha = 1;
+
+  confetti = confetti.filter(p => p.life > 0 && p.y < fx.height + 30);
+  confetti.forEach(p => {
+    p.vy += 0.35; p.vx *= 0.98; p.x += p.vx; p.y += p.vy; p.life--;
+    const x = Math.round(p.x / 4) * 4, y = Math.round(p.y / 4) * 4;
+    if (p.heart) pixelHeart(fctx, x, y, 3, p.c);
+    else { fctx.fillStyle = p.c; fctx.fillRect(x, y, p.s, p.s); }
+  });
+}
+
+/* =========================================================
+   Lock / unlock logic
+   ========================================================= */
+const lockedEl = document.getElementById("locked");
+const cardEl = document.getElementById("card");
+let unlocked = false;
+const pad = n => String(n).padStart(2, "0");
+
+function unlock() {
+  unlocked = true;
+  lockedEl.hidden = true;
+  cardEl.hidden = false;
+  document.title = "Happy Birthday! ♥";
+  setTimeout(() => burst(cv), 300);
+}
+
+function tick() {
+  if (unlocked) return;
+  const left = UNLOCK_AT - Date.now();
+  if (left <= 0 || PREVIEW) return unlock();
+  const s = Math.floor(left / 1000);
+  document.getElementById("cd-d").textContent = Math.floor(s / 86400);
+  document.getElementById("cd-h").textContent = pad(Math.floor(s / 3600) % 24);
+  document.getElementById("cd-m").textContent = pad(Math.floor(s / 60) % 60);
+  document.getElementById("cd-s").textContent = pad(s % 60);
+}
+tick();
+setInterval(tick, 1000);
+addEventListener("hashchange", () => { if (location.hash.includes("preview") && !unlocked) unlock(); });
+
+/* =========================================================
+   Card interaction
+   ========================================================= */
+const hint = document.getElementById("hint");
+const relight = document.getElementById("relight");
+cv.addEventListener("click", () => {
+  if (!lit) return;
+  lit = false;
+  candles.forEach(c => { for (let k = 0; k < 4; k++) smoke.push({ x: c.x, y: c.y - k * 0.6, vx: (Math.random() - 0.5) * 0.3, life: 30 + k * 6 }); });
+  burst(cv);
+  hint.innerHTML = '<span class="wish">Make a wish! ✨</span>';
+  relight.style.display = "inline-block";
+  setTimeout(() => { envWrap.style.display = "block"; }, 1400);
+});
+relight.addEventListener("click", () => {
+  lit = true;
+  hint.textContent = "Tap the cake to blow out the candles ♡";
+  relight.style.display = "none";
+});
+
+/* =========================================================
+   Envelope
+   ========================================================= */
+const envWrap = document.getElementById("envelopeWrap");
+const envCv = document.getElementById("envelope");
+const ectx = envCv.getContext("2d");
+const env = PixelGrid(32, 24);
+const EC = 10;
+envCv.width = env.w * EC; envCv.height = env.h * EC;
+
+env.rect(2, 4, 29, 21, C.pinkLight);                       // body
+for (let x = 2; x <= 29; x++) {                             // bottom "V" folds
+  const d = Math.min(x - 2, 29 - x);
+  const yb = 21 - Math.floor(d * 0.45);
+  env.set(x, yb, C.pinkDot);
+}
+for (let x = 2; x <= 29; x++) {                             // top flap
+  const d = Math.min(x - 2, 29 - x);
+  const yl = 4 + Math.floor(d * 0.62);
+  for (let y = 4; y < yl; y++) env.set(x, y, C.pink);
+  env.set(x, yl, C.brown);
+}
+HEART.forEach(([dx, dy]) => env.set(13 + dx, 11 + dy, C.red));   // heart seal
+env.set(14, 11, C.white);                                         // seal shine
+env.outline(C.brown);
+drawGrid(ectx, env, EC);
+
+/* =========================================================
+   Letter
+   ========================================================= */
+const modal = document.getElementById("letterModal");
+const letterBody = document.getElementById("letterBody");
+const esc = s => s.replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const recipient = () => document.getElementById("name").textContent.trim() || "you";
+
+function openLetter() {
+  const lines = [
+    `<p class="line to">${esc(LETTER.greeting.replace("{name}", recipient()))}</p>`,
+    ...LETTER.body.map(p => `<p class="line">${esc(p.replace("{name}", recipient()))}</p>`),
+    `<p class="line from">${esc(LETTER.signoff)}<br>${esc(LETTER.from)} ♥</p>`,
+  ];
+  letterBody.innerHTML = lines.join("");
+  [...letterBody.children].forEach((el, i) => el.style.animationDelay = `${0.3 + i * 0.45}s`);
+  modal.classList.add("open");
+  burst(envCv);
+}
+envCv.addEventListener("click", openLetter);
+document.getElementById("closeLetter").addEventListener("click", () => modal.classList.remove("open"));
+modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+
+/* =========================================================
+   Main loop
+   ========================================================= */
+let last = 0;
+function loop(now) {
+  if (now - last > 80) {      // ~12 fps for the retro pixel feel
+    last = now; t++;
+    smoke.forEach(p => { p.y -= 0.5; p.x += p.vx + Math.sin(t * 0.5 + p.y) * 0.15; p.life--; });
+    smoke = smoke.filter(p => p.life > 0);
+    if (unlocked) renderCake();
+    else { giftBlink = t % 40 < 2; renderGift(); }
+  }
+  stepFx();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
